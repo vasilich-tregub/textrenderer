@@ -32,13 +32,6 @@ const int fontWidth = FC_WIDTH_SEMIEXPANDED;
 
 int main()
 {
-    int width = 832, height = 120;
-    cairo_surface_t* surface = cairo_image_surface_create(CAIRO_FORMAT_A8, width, height);
-    cairo_t* cr = cairo_create(surface);
-    //cairo_set_tolerance(cr, 0.5);
-    cairo_matrix_t matrix{ 1, 0, 0, 1, 0, 3.0 * height / 4 };
-    cairo_transform(cr, &matrix);
-
     //hb_buffer_t* buf0 = hb_buffer_create();
     //hb_unicode_funcs_t* unicode = hb_buffer_get_unicode_funcs(buf0);
 
@@ -49,7 +42,7 @@ int main()
     int ft_error = FT_Init_FreeType(&library);
     FT_Face face;
 
-    std::u8string textRun = u8"Font found with FONTCONFIG";
+    std::u8string textRun = u8"Image size adjusted to glyphrun width";
 
     const char* text = reinterpret_cast<const char*>(textRun.data());
 
@@ -106,12 +99,10 @@ int main()
     hb_font_t* hb_font = hb_ft_font_create(face, 0);
     hb_shape(hb_font, buf, nullptr, 0);
     cairo_font_face_t* crFontFace = cairo_ft_font_face_create_for_ft_face(face, 0);
-    cairo_set_font_face(cr, crFontFace);
 
     unsigned int glyph_count = 0;
     hb_glyph_info_t* glyph_info = hb_buffer_get_glyph_infos(buf, &glyph_count);
     hb_glyph_position_t* glyph_pos = hb_buffer_get_glyph_positions(buf, &glyph_count);
-    cairo_set_font_size(cr, fontSize);
 
     cairo_glyph_t* crglyphs = new cairo_glyph_t[glyph_count];
 
@@ -125,6 +116,15 @@ int main()
     }
     textRunPos += xadv;
 
+    int width = textRunPos, height = 120;
+    cairo_surface_t* surface = cairo_image_surface_create(CAIRO_FORMAT_A8, width, height);
+    cairo_t* cr = cairo_create(surface);
+    //cairo_set_tolerance(cr, 0.5);
+    cairo_matrix_t matrix{ 1, 0, 0, 1, 0, 3.0 * height / 4 };
+    cairo_transform(cr, &matrix);
+
+    cairo_set_font_face(cr, crFontFace);
+    cairo_set_font_size(cr, fontSize);
     cairo_glyph_path(cr, crglyphs, glyph_count);
 
     hb_font_destroy(hb_font);

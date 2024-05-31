@@ -3,7 +3,7 @@
 #
 
 # Add source to this project's executable.
-add_executable (textrenderer "textrenderer.cpp" "textrenderer.h")
+add_executable (textrenderer "textrenderer.cpp" "textrenderer.h" "unicode_ranges.h")
 
 if (CMAKE_VERSION VERSION_GREATER 3.12)
   set_property(TARGET textrenderer PROPERTY CXX_STANDARD 20)

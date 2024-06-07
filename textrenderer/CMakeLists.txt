@@ -12,15 +12,14 @@ endif()
 if (MSVC)
   include("/vcpkg/scripts/buildsystems/vcpkg.cmake")
   target_include_directories(textrenderer PRIVATE 
-                                            "C:/vcpkg/installed/x64-windows/include/"
-                                            "C:/vcpkg/installed/x64-windows/include/fontconfig"
-  											"C:/vcpkg/installed/x64-windows/include/pango-1.0"
-											"C:/vcpkg/installed/x64-windows/include/glib-2.0"
-											"C:/vcpkg/installed/x64-windows/lib/glib-2.0/include"
-											"C:/vcpkg/installed/x64-windows/include/cairo"
+                                            "/vcpkg/installed/x64-windows/include/"
+											"/vcpkg/installed/x64-windows/include/cairo"
+  											"/vcpkg/installed/x64-windows/include/pango-1.0"
+											"/vcpkg/installed/x64-windows/include/glib-2.0"
+											"/vcpkg/installed/x64-windows/lib/glib-2.0/include"
   )
-  find_library(FONTCONFIG_LIBRARY fontconfig)
-  find_library(FREETYPE_LIBRARY freetype)
+  find_package(Fontconfig REQUIRED)
+  find_package(Freetype REQUIRED)
   find_library(CAIRO_LIBRARY cairo)
   find_library(PANGO_LIBRARY pango-1.0)
   find_library(PANGOCAIRO_LIBRARY pangocairo-1.0)
@@ -28,8 +27,8 @@ if (MSVC)
   find_package(harfbuzz CONFIG REQUIRED)
 
   target_link_libraries(textrenderer 
-    ${FONTCONFIG_LIBRARY}
-	${FREETYPE_LIBRARY}
+    Fontconfig::Fontconfig
+	Freetype::Freetype
 	harfbuzz::harfbuzz
     ${CAIRO_LIBRARY}
     ${PANGO_LIBRARY}
@@ -43,8 +42,6 @@ else()
 											"/usr/lib/x86_64-linux-gnu/glib-2.0/include"
   											"/usr/include/freetype2"
 											"/usr/include/cairo")
-#find_package(fontconfig CONFIG REQUIRED)
-  #target_link_libraries(textrenderer PRIVATE Fontconfig::Fontconfig)
 
   find_package(harfbuzz CONFIG REQUIRED)
   target_link_libraries(textrenderer PRIVATE

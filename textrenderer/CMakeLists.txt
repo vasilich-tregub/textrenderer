@@ -9,46 +9,43 @@ if (CMAKE_VERSION VERSION_GREATER 3.12)
   set_property(TARGET textrenderer PROPERTY CXX_STANDARD 20)
 endif()
 
-if (MSVC)
-  include("/vcpkg/scripts/buildsystems/vcpkg.cmake")
-  target_include_directories(textrenderer PRIVATE 
-                                            "/vcpkg/installed/x64-windows/include/"
-											"/vcpkg/installed/x64-windows/include/cairo"
-  											"/vcpkg/installed/x64-windows/include/pango-1.0"
-											"/vcpkg/installed/x64-windows/include/glib-2.0"
-											"/vcpkg/installed/x64-windows/lib/glib-2.0/include"
-  )
+#if (MSVC)
   find_package(Fontconfig REQUIRED)
   find_package(Freetype REQUIRED)
-  find_library(CAIRO_LIBRARY cairo)
+  find_package(PkgConfig REQUIRED)
+  pkg_check_modules(cairo REQUIRED IMPORTED_TARGET cairo)
   find_library(PANGO_LIBRARY pango-1.0)
   find_library(PANGOCAIRO_LIBRARY pangocairo-1.0)
-
   find_package(harfbuzz CONFIG REQUIRED)
 
+  target_include_directories(textrenderer PRIVATE 
+  											"${CMAKE_INCLUDE_PATH}/pango-1.0/"
+											"${CMAKE_INCLUDE_PATH}/glib-2.0"
+											"${CMAKE_PREFIX_PATH}/lib/glib-2.0/include"
+  )
   target_link_libraries(textrenderer 
     Fontconfig::Fontconfig
 	Freetype::Freetype
 	harfbuzz::harfbuzz
-    ${CAIRO_LIBRARY}
+    PkgConfig::cairo
     ${PANGO_LIBRARY}
     ${PANGOCAIRO_LIBRARY}
   )
-else()
-  target_include_directories(textrenderer PRIVATE 
-                                            "/usr/include/fontconfig"
-                                            "/usr/include/pango-1.0"
-											"/usr/include/glib-2.0" 
-											"/usr/lib/x86_64-linux-gnu/glib-2.0/include"
-  											"/usr/include/freetype2"
-											"/usr/include/cairo")
+#else()
+#  target_include_directories(textrenderer PRIVATE 
+#                                            "/usr/include/fontconfig"
+#                                            "/usr/include/pango-1.0"
+#											"/usr/include/glib-2.0" 
+#											"/usr/lib/x86_64-linux-gnu/glib-2.0/include"
+#  											"/usr/include/freetype2"
+#											"/usr/include/cairo")
 
-  find_package(harfbuzz CONFIG REQUIRED)
-  target_link_libraries(textrenderer PRIVATE
-                                            harfbuzz::harfbuzz
-                                            libfreetype.so
-                                            libcairo.so
-                                            libfontconfig.so)
-endif()
+#  find_package(harfbuzz CONFIG REQUIRED)
+#  target_link_libraries(textrenderer PRIVATE
+#                                            harfbuzz::harfbuzz
+#                                            libfreetype.so
+#                                            libcairo.so
+#                                            libfontconfig.so)
+#endif()
 
 # TODO: Add tests and install targets if needed.

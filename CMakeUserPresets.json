@@ -10,7 +10,8 @@
           "cacheVariables": {
             "CMAKE_C_COMPILER": "cl.exe",
             "CMAKE_CXX_COMPILER": "cl.exe",
-            "CMAKE_TOOLCHAIN_FILE": "/vcpkg/scripts/buildsystems/vcpkg.cmake"
+            "CMAKE_TOOLCHAIN_FILE": "/vcpkg/scripts/buildsystems/vcpkg.cmake",
+            "CMAKE_INCLUDE_PATH": "/vcpkg/installed/x64-windows/include/"
           },
             "condition": {
                 "type": "equals",
@@ -65,7 +66,9 @@
             "binaryDir": "${sourceDir}/out/build/${presetName}",
             "installDir": "${sourceDir}/out/install/${presetName}",
             "cacheVariables": {
-                "CMAKE_BUILD_TYPE": "Debug"
+              "CMAKE_BUILD_TYPE": "Debug",
+              "CMAKE_PREFIX_PATH": "/usr/",
+              "CMAKE_INCLUDE_PATH":  "/usr/include"
             },
             "condition": {
                 "type": "equals",

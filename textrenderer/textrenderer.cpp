@@ -85,9 +85,6 @@ int main()
 
         FcFontSet* fs = FcFontSetCreate();
 
-        FcConfigSubstitute(0, pat, FcMatchPattern);
-        FcDefaultSubstitute(pat);
-
         FcResult result;
         FcPatternAddBool(pat, FC_SCALABLE, FcTrue);
         char bufScript[5];
@@ -95,23 +92,15 @@ int main()
         bufScript[4] = 0;
         FcLangSet* langSet = FcLangSetCreate();
         FcLangSetAdd(langSet, (const FcChar8*)bufScript);
-        FcLangResult langresult = FcLangSetHasLang(langSet, (const FcChar8*)"Mymr");
+        //FcLangResult langresult = FcLangSetHasLang(langSet, (const FcChar8*)"Mymr");
         FcPatternAddLangSet(pat, FC_LANG, langSet);
-        int cmpr = strcmp(bufScript, "Mymr");
-        if (strcmp(bufScript, "Mymr") == 0)
-        {
-            //FcPatternAddString(pat, FC_FAMILY, (FcChar8*)"Myanmar Text");
-            pat = FcNameParse((FcChar8*)(FcChar8*)"Myanmar Text");
-            FcPatternAddInteger(pat, FC_WEIGHT, fontWeight);
-        }
-        else
-        {
-            //FcPatternAddString(pat, FC_FAMILY, (FcChar8*)fontName.c_str());
-            pat = FcNameParse((FcChar8*)fontName.c_str());
-            FcPatternAddInteger(pat, FC_SLANT, fontSlant);
-            FcPatternAddInteger(pat, FC_WEIGHT, fontWeight);
-            FcPatternAddInteger(pat, FC_WIDTH, fontWidth);
-        }
+        FcPatternAddString(pat, FC_FAMILY, (FcChar8*)fontName.c_str());
+        FcPatternAddInteger(pat, FC_SLANT, fontSlant);
+        FcPatternAddInteger(pat, FC_WEIGHT, fontWeight);
+        FcPatternAddInteger(pat, FC_WIDTH, fontWidth);
+
+        FcConfigSubstitute(0, pat, FcMatchPattern);
+        FcDefaultSubstitute(pat);
 
         FcPattern* match = FcFontMatch(0, pat, &result);
         if (!match)

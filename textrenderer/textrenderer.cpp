@@ -23,7 +23,6 @@
 #endif // !HB_H_IN
 #include <harfbuzz/hb-unicode.h>
 
-#include <pango-1.0/pango/pangocairo.h>
 #include <cairo/cairo-ft.h>
 
 const std::string fontName = "Verdana";
@@ -32,11 +31,11 @@ const int fontSlant = FC_SLANT_ITALIC;
 const int fontWeight = FC_WEIGHT_DEMIBOLD;
 const int fontWidth = FC_WIDTH_SEMIEXPANDED;
 
-std::u8string u8text =
-u8"Image size adjusted to glyphrun width\n"
+std::u8string u8text = u8"   မင်္ဂလာပါကမ္ဘာလောက";
+/*u8"Image size adjusted to glyphrun width\n"
 u8"System font retrieved with FONTCONFIG\n"
 u8"Glyphruns are rendered with cairographics\n"
-u8"Cyr: Привет мир! Mymr:   မင်္ဂလာပါကမ္ဘာလောက";
+u8"Cyr: Привет мир! Mymr:   မင်္ဂလာပါကမ္ဘာလောက";*/
 int main()
 {
     hb_buffer_t* buf0 = hb_buffer_create();
@@ -128,12 +127,14 @@ int main()
 
         ft_error = FT_Set_Pixel_Sizes(face, 0, fontSize);
         hb_font = hb_ft_font_create(face, 0);
-        hb_shape(hb_font, buf, nullptr, 0);
-        crFontFace = cairo_ft_font_face_create_for_ft_face(face, 0);
-
+        // https://stackoverflow.com/questions/75521682/how-to-get-unicode-codepoint-in-harfbuzz-after-calling-hb-shape
+        // https://stackoverflow.com/questions/61653970/how-can-i-activate-subpixel-positioning-with-pango-and-pycairo
+        // https://stackoverflow.com/questions/36697999/font-layouting-rendering-with-cairo-and-freetype
         unsigned int glyph_count = 0;
         hb_glyph_info_t* glyph_info = hb_buffer_get_glyph_infos(buf, &glyph_count);
         hb_glyph_position_t* glyph_pos = hb_buffer_get_glyph_positions(buf, &glyph_count);
+        hb_shape(hb_font, buf, nullptr, 0);
+        crFontFace = cairo_ft_font_face_create_for_ft_face(face, 0);
 
         double xadv = 0;
         for (unsigned int glix = 0; glix < glyph_count; ++glix)
@@ -271,7 +272,7 @@ int main()
         cairo_set_font_face(cr, crFontFace);
         cairo_set_font_size(cr, fontSize);
         cairo_glyph_path(cr, crglyphs.data(), crglyphs.size());
-
+        //cairo_show_glyphs(cr, crglyphs.data(), glyph_count);
         hb_font_destroy(hb_font);
 
         // draw

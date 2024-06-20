@@ -15,10 +15,14 @@ find_package(PkgConfig REQUIRED)
 pkg_check_modules(cairo REQUIRED IMPORTED_TARGET cairo)
 find_package(harfbuzz CONFIG REQUIRED)
 
-target_link_libraries(textrenderer 
+find_library(HB_CAIRO harfbuzz-cairo)
+
+target_link_libraries(textrenderer PRIVATE
   Fontconfig::Fontconfig
   Freetype::Freetype
   harfbuzz::harfbuzz
+  ${HB_CAIRO}
+  harfbuzz::harfbuzz-subset
   PkgConfig::cairo
 )
 

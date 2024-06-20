@@ -22,29 +22,32 @@
 #define HB_H_IN
 #endif // !HB_H_IN
 #include <harfbuzz/hb-unicode.h>
+#include <harfbuzz/hb-cairo.h>
 
 #include <cairo/cairo-ft.h>
 
-const std::string fontName = "Verdana";
+const std::string fontName = "Calibri";
 const int fontSize = 48;
 const int fontSlant = FC_SLANT_ITALIC;
 const int fontWeight = FC_WEIGHT_DEMIBOLD;
 const int fontWidth = FC_WIDTH_SEMIEXPANDED;
 
-std::u8string u8text = 
-u8"Image size adjusted to glyphrun width\n"
-u8"System font retrieved with FONTCONFIG\n"
+std::u8string u8text =
+u8"FONTCONFIG is used to retrieve matching fonts\n"
+u8"harfbuzz splits the unicode text into text runs\n"
+u8"according to textrun language writing system\n"
+u8"and produces glyphruns from textruns\n"
 u8"Glyphruns are rendered with cairographics\n"
-u8"Cyr: Привет мир! Mymr: မင်္ဂလာပါကမ္ဘာလောက\n"
-u8"Arab: مرحبا بالعالم even low-level text API\n"
-u8"of cairographics cannot do right-to-left\n"
-u8"scripts: we need pangocairo ";
+u8"Cyr: Привет мир\n"
+u8"Arab: مرحبابالعالم right-to-left script\n"
+u8"Mymr: မင်္ဂလာပါကမ္ဘာလောက glyph clusters";
 int main()
 {
     hb_buffer_t* buf0 = hb_buffer_create();
     hb_unicode_funcs_t* unicode = hb_buffer_get_unicode_funcs(buf0);
 
-    double textRunPos = 0;
+    int margin = 12;
+    double textRunPos = margin;
     double textWidth = 0;
     double linePos = 0;
 
@@ -69,7 +72,7 @@ int main()
         {
             linePos += lineHeight;
             textWidth = std::max(textRunPos, textWidth);
-            textRunPos = 0;
+            textRunPos = margin;
             continue;
         }
         const char* text = reinterpret_cast<const char*>(textRun.data());
@@ -97,24 +100,22 @@ int main()
         bufScript[4] = 0;
         FcLangSet* langSet = FcLangSetCreate();
         FcLangSetAdd(langSet, (const FcChar8*)bufScript);
-        FcLangResult langresult = FcLangSetHasLang(langSet, (const FcChar8*)"Mymr");
         FcPatternAddLangSet(pat, FC_LANG, langSet);
+        FcPatternAddString(pat, FC_FAMILY, (FcChar8*)fontName.c_str());
+        FcPatternAddInteger(pat, FC_WEIGHT, fontWeight);
+        FcPatternAddInteger(pat, FC_WIDTH, fontWidth);
         if (strcmp(bufScript, "Mymr") == 0)
         {
-            pat = FcNameParse((FcChar8*)(FcChar8*)"Myanmar Text");
+            pat = FcNameParse((FcChar8*)"Myanmar Text");
             FcPatternAddInteger(pat, FC_WEIGHT, fontWeight);
         }
         else if (strcmp(bufScript, "Arab") == 0)
         {
-            pat = FcNameParse((FcChar8*)(FcChar8*)"Arial");
-            FcPatternAddInteger(pat, FC_WEIGHT, fontWeight);
+            // no italic for arabic font
         }
         else
         {
-            FcPatternAddString(pat, FC_FAMILY, (FcChar8*)fontName.c_str());
             FcPatternAddInteger(pat, FC_SLANT, fontSlant);
-            FcPatternAddInteger(pat, FC_WEIGHT, fontWeight);
-            FcPatternAddInteger(pat, FC_WIDTH, fontWidth);
         }
         FcConfigSubstitute(0, pat, FcMatchPattern);
         FcDefaultSubstitute(pat);
@@ -144,31 +145,29 @@ int main()
         FcPatternDestroy(pat);
 
         ft_error = FT_Set_Pixel_Sizes(face, 0, fontSize);
-        /*hb_font = hb_ft_font_create(face, 0);
-        // https://stackoverflow.com/questions/75521682/how-to-get-unicode-codepoint-in-harfbuzz-after-calling-hb-shape
-        // https://stackoverflow.com/questions/61653970/how-can-i-activate-subpixel-positioning-with-pango-and-pycairo
-        // https://stackoverflow.com/questions/36697999/font-layouting-rendering-with-cairo-and-freetype
+        hb_font = hb_ft_font_create(face, 0);
+
         unsigned int glyph_count = 0;
-        hb_glyph_info_t* glyph_info = hb_buffer_get_glyph_infos(buf, &glyph_count);
-        hb_glyph_position_t* glyph_pos = hb_buffer_get_glyph_positions(buf, &glyph_count);
-        hb_shape(hb_font, buf, nullptr, 0);*/
+        hb_shape(hb_font, buf, nullptr, 0);
+
+        cairo_glyph_t* crglyphs = nullptr;
+        unsigned int crglyph_count = 0;
+        cairo_text_cluster_t* clusters = nullptr;
+        unsigned int cluster_count = 0;
+        cairo_text_cluster_flags_t cluster_flags;
+        hb_cairo_glyphs_from_buffer(buf,
+            /*bytes or characters*/true,
+            /*x_scale_factor*/ 64.0,
+            /*y_scale_factor*/ 1.0,
+            textRunPos, linePos,
+            (const char*)textRun.data(), textRun.size(),
+            &crglyphs, &crglyph_count,
+            &clusters, &cluster_count,
+            &cluster_flags);
         crFontFace = cairo_ft_font_face_create_for_ft_face(face, 0);
         cairo_set_font_face(crrec, crFontFace);
         cairo_set_font_size(crrec, fontSize);
         auto scaled_face = cairo_get_scaled_font(crrec);
-        cairo_text_cluster_t* clusters = nullptr;
-        int cluster_count;
-        cairo_glyph_t* crglyphs = nullptr;
-        int crglyph_count;
-        cairo_text_cluster_flags_t cluster_flags;
-        auto stat = cairo_scaled_font_text_to_glyphs(scaled_face, textRunPos, linePos,
-            (const char*)textRun.data(), textRun.size(), &crglyphs, &crglyph_count,
-            &clusters, &cluster_count, &cluster_flags);
-        if (stat != CAIRO_STATUS_SUCCESS)
-        {
-            std::cout << "cannot get glyphs for text run " << (const char*)textRun.data() << std::endl;
-            continue;
-        }
 
         cairo_text_extents_t text_extents;
         cairo_scaled_font_glyph_extents(scaled_face, crglyphs, crglyph_count, &text_extents);
@@ -204,11 +203,7 @@ int main()
         hb_buffer_destroy(buf);
     }
 
-    // first time the layout is done without drawing, only to compute the canvass size
-    // then I do it again and draw the glyphs
-    // TODO: reuse the operations to the utmost
-
-    int width = std::max(textWidth, textRunPos), height = linePos + lineHeight;
+    int width = std::max(textWidth, textRunPos) + margin, height = linePos + lineHeight + margin;
 
     cairo_surface_t* surface = cairo_image_surface_create(CAIRO_FORMAT_ARGB32, width, height);
     cairo_t* cr = cairo_create(surface);

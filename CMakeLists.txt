@@ -13,3 +13,4 @@ project ("textrenderer")
 
 # Include sub-projects.
 add_subdirectory ("textrenderer")
+#add_subdirectory ("hb-buffer-learn")

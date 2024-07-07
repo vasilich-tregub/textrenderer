@@ -26,21 +26,21 @@
 
 #include <cairo/cairo-ft.h>
 
-const std::string fontName = "Calibri";
+const std::string fontName = "Arial";
 const int fontSize = 48;
 const int fontSlant = FC_SLANT_ITALIC;
 const int fontWeight = FC_WEIGHT_DEMIBOLD;
 const int fontWidth = FC_WIDTH_SEMIEXPANDED;
 
-std::u8string u8text =
-u8"FONTCONFIG is used to retrieve matching fonts\n"
+std::u8string u8text = u8"Arab:^الإصلاحي بزشكيان في طريقه_right-to-left script\n";
+/*u8"FONTCONFIG is used to retrieve matching fonts\n"
 u8"harfbuzz splits the unicode text into text runs\n"
 u8"according to textrun language writing system\n"
 u8"and produces glyphruns from textruns\n"
 u8"Glyphruns are rendered with cairographics\n"
 u8"Cyr: Привет мир\n"
 u8"Arab: مرحبابالعالم right-to-left script\n"
-u8"Mymr: မင်္ဂလာပါကမ္ဘာလောက glyph clusters";
+u8"Mymr: မင်္ဂလာပါကမ္ဘာလောက glyph clusters";*/
 int main()
 {
     hb_buffer_t* buf0 = hb_buffer_create();

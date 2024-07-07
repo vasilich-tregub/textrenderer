@@ -100,8 +100,10 @@ int u8seqToChar32cp(std::u8string::iterator& iter, std::u8string::iterator iterE
 
 int TextAnalyzer(std::u8string& stringToAnalyze, hb_unicode_funcs_t* unicode, std::vector<std::u8string>& textRuns)
 {
+    std::vector<std::u8string> rtlTextRuns{};
     int ret = 0;
     hb_script_t runScript = HB_SCRIPT_UNKNOWN;
+    hb_direction_t runDirection = HB_DIRECTION_LTR; // or HB_DIRECTION_INVALID? No, better start always with LTR direction
     char32_t cp;
     auto iter = begin(stringToAnalyze);
     auto runStart = iter;
@@ -109,15 +111,43 @@ int TextAnalyzer(std::u8string& stringToAnalyze, hb_unicode_funcs_t* unicode, st
     if ((ret = u8seqToChar32cp(iter, end(stringToAnalyze), &cp)) != 0)
         return ret;
     runScript = hb_unicode_script(unicode, cp);
+    hb_direction_t directionBefore = hb_script_get_horizontal_direction(runScript);
+    auto insertIter = begin(textRuns);
+    int rtlRunsCount = 0;
     for (; iter != end(stringToAnalyze);)
     {
         runEnd = iter;
         if ((ret = u8seqToChar32cp(iter, end(stringToAnalyze), &cp)) != 0)
             return ret;
-        hb_script_t script = hb_unicode_script(unicode, cp); // for hb's "arab:^طريقه_RTL", my logic renders "arab:^_طريقهRTL"
-        if (script != runScript && script != HB_SCRIPT_COMMON) //  (both HB_SCRIPT_COMMON cp's, ^ and _, come before HB_SCRIPT_ARAB cp's)
+        hb_script_t script = hb_unicode_script(unicode, cp);
+        hb_direction_t direction = hb_script_get_horizontal_direction(script);
+        if (script != runScript) // todo: process HB_SCRIPT_COMMON case to account for blank space, 0x20;
         {
-            textRuns.emplace_back(runStart, runEnd);
+            std::u8string textrun(runStart, runEnd);
+            if (direction == HB_DIRECTION_LTR)
+            {
+                if (script != HB_SCRIPT_COMMON)
+                {
+                    rtlRunsCount = 0;
+                }
+                insertIter = textRuns.end();
+            }
+            else
+            {
+                if (directionBefore == HB_DIRECTION_LTR)
+                {
+                    insertIter = textRuns.end();
+                    directionBefore = direction;
+                    ++rtlRunsCount;
+                    insertIter = end(textRuns) - rtlRunsCount;
+                }
+                else
+                {
+                    ++rtlRunsCount;
+                    insertIter = end(textRuns) - rtlRunsCount;
+                }
+            }
+            textRuns.insert(insertIter, textrun);
             runStart = runEnd;
             runScript = script;
         }

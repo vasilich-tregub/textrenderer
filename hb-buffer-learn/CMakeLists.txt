@@ -14,7 +14,6 @@ find_package(Freetype REQUIRED)
 find_package(PkgConfig REQUIRED)
 pkg_check_modules(cairo REQUIRED IMPORTED_TARGET cairo)
 find_package(harfbuzz CONFIG REQUIRED)
-
 find_library(HB_CAIRO harfbuzz-cairo)
 
 target_link_libraries(hb-buffer-learn PRIVATE
@@ -22,7 +21,7 @@ target_link_libraries(hb-buffer-learn PRIVATE
   Freetype::Freetype
   harfbuzz::harfbuzz
   ${HB_CAIRO}
-  harfbuzz::harfbuzz-subset
+  #harfbuzz::harfbuzz-subset
   PkgConfig::cairo
 )
 

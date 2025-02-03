@@ -115,7 +115,7 @@ int TextAnalyzer(std::u8string& stringToAnalyze, hb_unicode_funcs_t* unicode, st
         if ((ret = u8seqToChar32cp(iter, end(stringToAnalyze), &cp)) != 0)
             return ret;
         hb_script_t script = hb_unicode_script(unicode, cp); // for hb's "arab:^طريقه_RTL", my logic renders "arab:^_طريقهRTL"
-        if (script != runScript && script != HB_SCRIPT_COMMON) //  (both HB_SCRIPT_COMMON cp's, ^ and _, come before HB_SCRIPT_ARAB cp's)
+        if (script != runScript/* && script != HB_SCRIPT_COMMON*/) //  (both HB_SCRIPT_COMMON cp's, ^ and _, come before HB_SCRIPT_ARAB cp's)
         {
             textRuns.emplace_back(runStart, runEnd);
             runStart = runEnd;

@@ -22,7 +22,6 @@ target_link_libraries(textrenderer PRIVATE
   Freetype::Freetype
   harfbuzz::harfbuzz
   ${HB_CAIRO}
-  #harfbuzz::harfbuzz-subset
   PkgConfig::cairo
 )
 # TODO: Add tests and install targets if needed.

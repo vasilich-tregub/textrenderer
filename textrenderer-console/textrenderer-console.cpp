@@ -1,9 +1,7 @@
 ﻿// textrenderer.cpp : Defines the entry point for the application.
 //
 
-#define SHAPE_TEXTRUN
-
-#include "textrenderer.h"
+#include "textrenderer-console.h"
 #include "unicode_ranges.h"
 #include <vector>
 #include <string>
@@ -41,8 +39,8 @@ int main()
 {
     const std::string fontName = "Arial";
     const int fontSize = 24;
-    const int fontWeight = FC_WEIGHT_REGULAR;
     const int fontSlant = FC_SLANT_ROMAN;
+    const int fontWeight = FC_WEIGHT_REGULAR;
     const int fontWidth = FC_WIDTH_NORMAL;
 
     hb_buffer_t* buf0 = hb_buffer_create();
@@ -81,10 +79,77 @@ int main()
 
         hb_buffer_t* buf = hb_buffer_create();
 
-        fontdesc fdesc{ fontName.c_str(), fontSize, fontWeight, fontSlant, fontWidth };
+        hb_buffer_add_utf8(buf, text, (int)strlen(text), 0, (int)strlen(text));
 
-        ShapeTextRun(text, library, fdesc, &face, buf);
-        
+        hb_buffer_guess_segment_properties(buf);
+
+        FcPattern* pat = FcPatternCreate();
+
+        if (!pat)
+        {
+            std::cout << "Cannot create the pattern.\n";
+            return -1;
+        }
+
+        FcFontSet* fs = FcFontSetCreate();
+
+        FcResult result;
+        FcPatternAddBool(pat, FC_SCALABLE, FcTrue);
+        char bufScript[5];
+        hb_tag_to_string(hb_script_to_iso15924_tag(hb_buffer_get_script(buf)), bufScript);
+        bufScript[4] = 0;
+        FcLangSet* langSet = FcLangSetCreate();
+        FcLangSetAdd(langSet, (const FcChar8*)bufScript);
+        FcPatternAddLangSet(pat, FC_LANG, langSet);
+        FcPatternAddString(pat, FC_FAMILY, (FcChar8*)fontName.c_str());
+        FcPatternAddInteger(pat, FC_WEIGHT, fontWeight);
+        FcPatternAddInteger(pat, FC_WIDTH, fontWidth);
+        if (strcmp(bufScript, "Mymr") == 0)
+        {
+            pat = FcNameParse((FcChar8*)"Myanmar Text");
+            FcPatternAddInteger(pat, FC_WEIGHT, fontWeight);
+        }
+        else if (strcmp(bufScript, "Arab") == 0)
+        {
+            // no italic for arabic font
+        }
+        else
+        {
+            FcPatternAddInteger(pat, FC_SLANT, fontSlant);
+        }
+        FcConfigSubstitute(0, pat, FcMatchPattern);
+        FcDefaultSubstitute(pat);
+
+        FcPattern* match = FcFontMatch(0, pat, &result);
+        if (!match)
+            /*FcFontSetAdd(fs, match);
+        else*/
+        {
+            std::cout << "No matching font string found.\n";
+            return -1;
+        }
+
+        FcChar8* fontfile = nullptr;
+        if (FcResultMatch != FcPatternGetString(match, FC_FILE, 0, &fontfile))
+        {
+            std::cout << "No matching font string found.\n";
+            return -1;
+        }
+
+        if ((ft_error = FT_New_Face(library, (char*)fontfile, 0, &face)) != 0)
+        {
+            std::cout << "FT_New_Face returns error code " << ft_error << "\n";
+            return -1;
+        }
+
+        FcPatternDestroy(pat);
+
+        ft_error = FT_Set_Pixel_Sizes(face, 0, fontSize);
+        hb_font = hb_ft_font_create(face, 0);
+
+        unsigned int glyph_count = 0;
+        hb_shape(hb_font, buf, nullptr, 0);
+
         cairo_glyph_t* crglyphs = nullptr;
         unsigned int crglyph_count = 0;
         cairo_text_cluster_t* clusters = nullptr;

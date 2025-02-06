@@ -5,27 +5,11 @@
 
 #include <vector>
 #include <string>
-
-#include <ft2build.h>
-#include FT_FREETYPE_H
-
-#include <harfbuzz/hb.h>
-#include <harfbuzz/hb-ft.h>
 #ifndef HB_H_IN
 #define HB_H_IN
 #endif // !HB_H_IN
 #include <harfbuzz/hb-unicode.h>
 #include <fontconfig/fontconfig.h>
-
-struct fontdesc
-{
-    const char* fontName;
-    const int fontSize;
-    const int fontWeight;
-    const int fontSlant;
-    const int fontWidth;
-
-};
 
 int u8seqToChar32cp(std::u8string::iterator& iter, std::u8string::iterator iterEnd, char32_t* code_point)
 {
@@ -146,84 +130,15 @@ int TextAnalyzer(std::u8string& stringToAnalyze, hb_unicode_funcs_t* unicode, st
 
 int setFont(const char* fontName = "Arial",
     const int fontSize = 14,
-    const int fontWeight = FC_WEIGHT_REGULAR,
     const int fontSlant = FC_SLANT_ROMAN,
+    const int fontWeight = FC_WEIGHT_REGULAR,
     const int fontWidth = FC_WIDTH_NORMAL
 )
 {
     return 0;
 }
 
-int ShapeTextRun(const char* text, FT_Library library, fontdesc fdesc, FT_Face* face, hb_buffer_t* buf)
+int TextRenderer(const char* text)
 {
-    hb_buffer_add_utf8(buf, text, (int)strlen(text), 0, (int)strlen(text));
-
-    hb_buffer_guess_segment_properties(buf);
-
-    FcPattern* pat = FcPatternCreate();
-
-    if (!pat)
-    {
-        //std::cout << "Cannot create the pattern.\n";
-        return -1;
-    }
-
-    FcResult result;
-    FcPatternAddBool(pat, FC_SCALABLE, FcTrue);
-    char bufScript[5];
-    hb_tag_to_string(hb_script_to_iso15924_tag(hb_buffer_get_script(buf)), bufScript);
-    bufScript[4] = 0;
-    FcLangSet* langSet = FcLangSetCreate();
-    FcLangSetAdd(langSet, (const FcChar8*)bufScript);
-    FcPatternAddLangSet(pat, FC_LANG, langSet);
-    FcPatternAddString(pat, FC_FAMILY, (FcChar8*)fdesc.fontName);
-    FcPatternAddInteger(pat, FC_WEIGHT, fdesc.fontWeight);
-    FcPatternAddInteger(pat, FC_WIDTH, fdesc.fontWidth);
-    if (strcmp(bufScript, "Mymr") == 0)
-    {
-        pat = FcNameParse((FcChar8*)"Myanmar Text");
-        FcPatternAddInteger(pat, FC_WEIGHT, fdesc.fontWeight);
-    }
-    else if (strcmp(bufScript, "Arab") == 0)
-    {
-        // no italic for arabic font
-    }
-    else
-    {
-        FcPatternAddInteger(pat, FC_SLANT, fdesc.fontSlant);
-    }
-    FcConfigSubstitute(0, pat, FcMatchPattern);
-    FcDefaultSubstitute(pat);
-
-    FcPattern* match = FcFontMatch(0, pat, &result);
-    if (!match)
-        /*FcFontSetAdd(fs, match);
-    else*/
-    {
-        //std::cout << "No matching font string found.\n";
-        return -1;
-    }
-
-    FcChar8* fontfile = nullptr;
-    if (FcResultMatch != FcPatternGetString(match, FC_FILE, 0, &fontfile))
-    {
-        //std::cout << "No matching font string found.\n";
-        return -1;
-    }
-
-    int ft_error;
-    if ((ft_error = FT_New_Face(library, (char*)fontfile, 0, face)) != 0)
-    {
-        //std::cout << "FT_New_Face returns error code " << ft_error << "\n";
-        return -1;
-    }
-
-    FcPatternDestroy(pat);
-
-    ft_error = FT_Set_Pixel_Sizes(*face, 0, fdesc.fontSize);
-    hb_font_t* hb_font = hb_ft_font_create(*face, 0);
-
-    unsigned int glyph_count = 0;
-    hb_shape(hb_font, buf, nullptr, 0);
     return 0;
 }

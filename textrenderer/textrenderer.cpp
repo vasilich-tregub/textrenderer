@@ -29,14 +29,15 @@
 #include <cairo/cairo-ft.h>
 
 std::u8string u8text = //u8"Arab:^الإصلاحي بزشكيان في طريقه_right-to-left script\n";
-u8"FONTCONFIG is used to retrieve matching fonts\n"
-u8"harfbuzz splits the unicode text into text runs\n"
-u8"according to textrun language writing system\n"
-u8"and produces glyphruns from textruns\n"
-u8"Glyphruns are rendered with cairographics\n"
+u8"FONTCONFIG is used to retrieve matching fonts, "
+u8"harfbuzz splits the unicode text into text runs "
+u8"according to textrun language writing system "
+u8"and produces glyphruns from textruns. "
+u8"Glyphruns are rendered with cairographics. \n"
 u8"Cyr: Привет мир\n"
 u8"Arab: مرحبابالعالم right-to-left script\n"
-u8"Mymr: မင်္ဂလာပါကမ္ဘာလောက glyph clusters";
+u8"Mymr: မင်္ဂလာပါကမ္ဘာလောက glyph clusters\n"
+u8"(Implemented as a header only library.)";
 int main()
 {
     const std::string fontName = "Arial";
@@ -45,100 +46,18 @@ int main()
     const int fontSlant = FC_SLANT_ROMAN;
     const int fontWidth = FC_WIDTH_NORMAL;
 
-    hb_buffer_t* buf0 = hb_buffer_create();
-    hb_unicode_funcs_t* unicode = hb_buffer_get_unicode_funcs(buf0);
-
-    int margin = 12;
-    double textRunPos = margin;
-    double textWidth = 0;
-    double linePos = 0;
-
-    FT_Library    library;
-
-    int ft_error = FT_Init_FreeType(&library);
-    FT_Face face{};
-    double lineHeight = 1.33 * fontSize;
-
-    std::vector<std::u8string> textRuns;
-    TextAnalyzer(u8text, unicode, textRuns);
-
-    hb_font_t* hb_font = nullptr;
-    cairo_font_face_t* crFontFace = nullptr;
+    double margin = 12;
+    double textWidth = 320;
+    double lineHeight = fontSize;
 
     cairo_surface_t* recorder = cairo_recording_surface_create(CAIRO_CONTENT_COLOR_ALPHA, nullptr);
-    cairo_t* crrec = cairo_create(recorder);
 
-    for (std::u8string_view textRun : textRuns)
-    {
-        if (textRun == u8"\n")
-        {
-            linePos += lineHeight;
-            textWidth = std::max(textRunPos, textWidth);
-            textRunPos = margin;
-            continue;
-        }
-        const char* text = reinterpret_cast<const char*>(textRun.data());
+    fontdesc fdesc{ fontName.c_str(), fontSize, fontWeight, fontSlant, fontWidth };
 
-        hb_buffer_t* buf = hb_buffer_create();
+    double linePos = 0;
 
-        fontdesc fdesc{ fontName.c_str(), fontSize, fontWeight, fontSlant, fontWidth };
-
-        ShapeTextRun(text, library, fdesc, &face, buf);
-        
-        cairo_glyph_t* crglyphs = nullptr;
-        unsigned int crglyph_count = 0;
-        cairo_text_cluster_t* clusters = nullptr;
-        unsigned int cluster_count = 0;
-        cairo_text_cluster_flags_t cluster_flags;
-        hb_cairo_glyphs_from_buffer(buf,
-            /*bytes or characters*/true,
-            /*x_scale_factor*/ 64.0,
-            /*y_scale_factor*/ 1.0,
-            textRunPos, linePos,
-            (const char*)textRun.data(), textRun.size(),
-            &crglyphs, &crglyph_count,
-            &clusters, &cluster_count,
-            &cluster_flags);
-        crFontFace = cairo_ft_font_face_create_for_ft_face(face, 0);
-        cairo_set_font_face(crrec, crFontFace);
-        cairo_set_font_size(crrec, fontSize);
-        auto scaled_face = cairo_get_scaled_font(crrec);
-
-        cairo_text_extents_t text_extents;
-        cairo_scaled_font_glyph_extents(scaled_face, crglyphs, crglyph_count, &text_extents);
-        textRunPos += text_extents.x_advance;
-        int crglyph_ix = 0;
-        for (unsigned int clix = 0; clix < cluster_count; ++clix)
-        {
-            cairo_text_cluster_t* cluster = &clusters[clix];
-            cairo_glyph_t* crglyphs_in_cluster = &crglyphs[crglyph_ix];
-            cairo_glyph_path(crrec, crglyphs_in_cluster, cluster->num_glyphs);
-            
-            cairo_set_source_rgba(crrec, 0.57, 0.33, 0.82, 1.0);
-            cairo_fill_preserve(crrec);
-
-            cairo_set_line_width(crrec, 1.0);
-            cairo_set_source_rgba(crrec, 0.31, 0.73, 0.42, 2.0 / 3);
-            cairo_stroke(crrec);
-
-            crglyph_ix += cluster->num_glyphs;
-        }
-        /*double xadv = 0;
-        for (unsigned int glix = 0; glix < glyph_count; ++glix)
-        {
-            cairo_glyph_t crglyph;
-            crglyph.index = glyph_info[glix].codepoint;
-            crglyph.x = glyph_pos[glix].x_offset + xadv + textRunPos;
-            xadv += glyph_pos[glix].x_advance / 64.0;
-            crglyph.y = linePos + glyph_pos[glix].y_offset;
-            //crglyphs.emplace_back(crglyph);
-        }
-        textRunPos += xadv;*/
-
-        hb_buffer_destroy(buf);
-    }
-
-    int width = std::max(textWidth, textRunPos) + margin, height = linePos + lineHeight + margin;
+    RenderText(u8text, fdesc, recorder, lineHeight, textWidth, margin, &linePos);
+    int width = textWidth + margin, height = linePos + lineHeight + margin;
 
     cairo_surface_t* surface = cairo_image_surface_create(CAIRO_FORMAT_ARGB32, width, height);
     cairo_t* cr = cairo_create(surface);
@@ -146,14 +65,11 @@ int main()
     cairo_transform(cr, &matrix);
     cairo_set_source_surface(cr, recorder, 0.0, 0.0);
     cairo_paint(cr);
-    FT_Done_Face(face);
-    FT_Done_FreeType(library);
 
     auto status = cairo_surface_write_to_png(surface, "glyphrun.png");
 
     //delete[] crglyphs;
 
-    cairo_destroy(crrec);
     cairo_surface_destroy(recorder);
     cairo_destroy(cr);
     cairo_surface_destroy(surface);

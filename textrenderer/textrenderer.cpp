@@ -66,6 +66,9 @@ int main()
     cairo_set_source_surface(cr, recorder, 0.0, 0.0);
     cairo_paint(cr);
 
+    // get pixel data from image surface
+    unsigned char* data = cairo_image_surface_get_data(surface);
+    // write image surface to png
     auto status = cairo_surface_write_to_png(surface, "glyphrun.png");
 
     //delete[] crglyphs;

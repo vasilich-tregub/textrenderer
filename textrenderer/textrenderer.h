@@ -31,6 +31,14 @@ struct fontdesc
 
 };
 
+struct colorstruct
+{
+    double red;
+    double green;
+    double blue;
+    double alpha;
+};
+
 int u8seqToChar32cp(std::u8string::iterator& iter, std::u8string::iterator iterEnd, char32_t* code_point)
 {
     if (iter == iterEnd)
@@ -242,8 +250,10 @@ int ShapeTextRun(const char* text, FT_Library library, fontdesc fdesc, FT_Face* 
     return 0;
 }
 
-int RenderText(std::u8string u8text, fontdesc fdesc, cairo_surface_t* recorder, double lineHeight, double textWidth, double margin, double* linePos)
+int RenderText(std::u8string u8text, fontdesc fdesc, colorstruct fillColor, colorstruct outlineColor, double glyphOutlineWidth,
+    cairo_surface_t* recorder, double lineHeight, double textWidth, double margin, double* linePos)
 {
+    *linePos = lineHeight;
     hb_buffer_t* buf0 = hb_buffer_create();
     hb_unicode_funcs_t* unicode = hb_buffer_get_unicode_funcs(buf0);
 
@@ -321,11 +331,11 @@ int RenderText(std::u8string u8text, fontdesc fdesc, cairo_surface_t* recorder, 
             cairo_glyph_t* crglyphs_in_cluster = &crglyphs[crglyph_ix];
             cairo_glyph_path(crrec, crglyphs_in_cluster, cluster->num_glyphs);
 
-            cairo_set_source_rgba(crrec, 0.57, 0.33, 0.82, 1.0);
+            cairo_set_source_rgba(crrec, fillColor.red, fillColor.green, fillColor.blue, fillColor.alpha);
             cairo_fill_preserve(crrec);
 
-            cairo_set_line_width(crrec, 1.0);
-            cairo_set_source_rgba(crrec, 0.31, 0.73, 0.42, 2.0 / 3);
+            cairo_set_line_width(crrec, glyphOutlineWidth);
+            cairo_set_source_rgba(crrec, outlineColor.red, outlineColor.green, outlineColor.blue, outlineColor.alpha);
             cairo_stroke(crrec);
 
             crglyph_ix += cluster->num_glyphs;
